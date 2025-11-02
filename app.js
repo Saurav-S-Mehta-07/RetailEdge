@@ -10,6 +10,7 @@ const methodOverride = require("method-override");
 
 const Item = require("./models/Item");
 const Shopkeeper = require("./models/Shopkeeper");
+const { count } = require("console");
 
 const app = express();
 const PORT = 3000;
@@ -119,6 +120,41 @@ app.get("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
 
+
+app.post("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
+  const { title, price, category, image, discount, stock, rating, quantity } = req.body;
+
+  // Find item by ID
+  let details = await Item.findById(req.params.id);
+  if (!details) return res.status(404).send("Item not found");
+
+  // Update fields
+  details.title = title;
+  details.price = price;
+  details.category = category;
+  details.discount = discount;
+  details.stock = stock;
+  details.rating = rating;
+  details.image = image;
+  details.quantity = quantity;
+
+  // Save the updated item
+  await details.save();
+
+  // Get shopkeeper items for the page
+  const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+
+  // Redirect or render updated show page
+  res.render("listings/show", { details, items: shopkeeper.items });
+}));
+
+
+//edit list
+app.get("/main/edit/:id",isLoggedIn, catchAsync(async(req,res)=>{
+    const details = await Item.findById(req.params.id);
+    res.render("listings/editlist",{details})
+}));
+
 app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
   res.render("listings/addlist", { items: shopkeeper.items });
@@ -166,4 +202,4 @@ app.use((err, req, res, next) => {
   res.redirect("back");
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
