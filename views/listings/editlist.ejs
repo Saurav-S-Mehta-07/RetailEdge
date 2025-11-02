@@ -1,0 +1,53 @@
+<% layout("layouts/boilerplateCode") %>
+
+<div class="add-list-form">
+  <h1 id="form-heading">Edit Item</h1>
+  
+  <form action="/main/show/<%= details._id %>" class="form-list" method="post">
+    
+    <div class="form-field">
+      <label for="title">Item Name</label>
+      <input type="text" name="title" placeholder="Enter new title" value="<%= details.title %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="price">Price</label>
+      <input type="number" name="price" placeholder="Enter new price" min="0" value="<%= details.price %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="category">Category</label>
+      <input type="text" name="category" placeholder="Enter new category" value="<%= details.category %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="discount">Discount</label>
+      <input type="text" name="discount" placeholder="Enter new discount" value="<%= details.discount %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="stock">Stock</label>
+      <input type="text" name="stock" placeholder="Enter new stock" value="<%= details.stock %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="quantity">Quantity</label>
+      <input type="text" name="quantity" placeholder="Enter new quantity" value="<%= details.quantity %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="rating">Rating</label>
+      <input type="text" name="rating" placeholder="Enter new rating" value="<%= details.rating %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="image">Image link</label>
+      <input type="text" name="image" placeholder="Enter new image link" value="<%= details.image %>" required>
+    </div>
+
+    <div class="form-field btn-field">
+      <button type="submit" class="btn">Update</button>
+    </div>
+    
+  </form>
+</div>
