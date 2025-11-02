@@ -18,25 +18,24 @@
                 </div>
             </div>
 
-            <marquee behavior="alternate" class="cards-container">
+            <!-- <div class="cards-container">
 
                 <div class="cards listing-cards">
 
                  <% for(let listing of items) { %>
 
                    <a href="/main/show/<%=listing._id%>" class="listing-links">
-                    <div class="card">
+                    <div class="card listing-card">
+                        <form class="dlt-listing-form" action="/main/<%= listing._id %>?_method=delete" method="post">
+                             <button class="dlt-listing" type="submit">dlt</button>
+                        </form>
                         <img class="cards-img" src="/assets/<%=listing.image%>" alt="">
-                        <h4><%= listing.title %></h4>
                     </div>
-                    <form class="dlt-listing-form" action="/main/<%= listing._id %>?_method=delete" method="post">
-                        <button class="dlt-listing" type="submit">dlt</button>
-                    </form>
                   </a>
                 <% } %>
 
                 </div>
-            </marquee>
+            </div> -->
 
             <div class="content">
 
