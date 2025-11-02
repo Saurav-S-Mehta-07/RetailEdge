@@ -36,7 +36,15 @@
 
 .show-details{
     width: 56%;
-    overflow: scroll;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.show-details table{
+    height: 80%;
+    width: 80%;
+    text-align: center;
 }
 
 .show-card{
@@ -89,5 +97,4 @@
     width: 95%;
     box-shadow: 2px 2px 60px #568F87;
     border-radius: 20px;
-    background-color: blue;
 }
