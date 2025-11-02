@@ -7,10 +7,12 @@ const LocalStrategy = require("passport-local");
 const session = require("express-session");
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
+const multer = require("multer"); // ✅ for image upload
+require('dotenv').config();
+
 
 const Item = require("./models/Item");
 const Shopkeeper = require("./models/Shopkeeper");
-const { count } = require("console");
 
 const app = express();
 const PORT = 3000;
@@ -23,6 +25,18 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride("_method"));
+
+// ✅ Multer setup
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "public/uploads"));
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
 
 // MongoDB
 mongoose.connect("mongodb://127.0.0.1:27017/b2b2c")
@@ -120,39 +134,31 @@ app.get("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
 
-
-app.post("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
-  const { title, price, category, image, discount, stock, rating, quantity } = req.body;
-
-  // Find item by ID
+app.post("/main/show/:id", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
+  const { title, price, category, discount, stock, rating, quantity } = req.body;
   let details = await Item.findById(req.params.id);
   if (!details) return res.status(404).send("Item not found");
 
-  // Update fields
   details.title = title;
   details.price = price;
   details.category = category;
   details.discount = discount;
   details.stock = stock;
   details.rating = rating;
-  details.image = image;
   details.quantity = quantity;
 
-  // Save the updated item
+  // ✅ Only save image filename (no /uploads/)
+  if (req.file) details.image = req.file.filename;
+
   await details.save();
-
-  // Get shopkeeper items for the page
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
-
-  // Redirect or render updated show page
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
 
-
-//edit list
-app.get("/main/edit/:id",isLoggedIn, catchAsync(async(req,res)=>{
-    const details = await Item.findById(req.params.id);
-    res.render("listings/editlist",{details})
+// Edit list
+app.get("/main/edit/:id", isLoggedIn, catchAsync(async (req, res) => {
+  const details = await Item.findById(req.params.id);
+  res.render("listings/editlist", { details });
 }));
 
 app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
@@ -160,12 +166,16 @@ app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/addlist", { items: shopkeeper.items });
 }));
 
-app.post("/main", isLoggedIn, catchAsync(async (req, res) => {
-  const { title, price, category, image } = req.body;
+// ✅ Save only image filename
+app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
+  const { title, price, category } = req.body;
+  const image = req.file ? req.file.filename : "";
+
   const newItem = await Item.create({ title, price, category, image });
   const shopkeeper = await Shopkeeper.findById(req.user._id);
   shopkeeper.items.push(newItem._id);
   await shopkeeper.save();
+
   req.flash("success", "Item added successfully!");
   res.redirect("/main");
 }));
