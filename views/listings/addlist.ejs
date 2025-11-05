@@ -1,34 +1,74 @@
 <% layout("layouts/boilerplateCode")%>
 
 <div class="add-list-form">
+  <h1 id="form-heading">Add Item</h1>
+  <form action="/main" class="form-list" method="post" enctype="multipart/form-data">
 
-    <h1 id="form-heading">Add Item</h1>
-    <form action="/main" class="form-list" method="post" enctype="multipart/form-data">
-        
-        <div class="form-field">
-            <label for="title">item name</label>
-            <input type="text" placeholder="  enter title" name="title" required>
-        </div>
+    <!-- 1️⃣ Product Details -->
+    <div class="form-field">
+      <label for="name">Item Name</label>
+      <input type="text" placeholder="  Enter item name" name="name" id="name" required>
+    </div>
 
-        <div class="form-field">
-            <label for="price">price</label>
-            <input type="number" name="price" placeholder="  enter price" min="0" id="price" required>
-        </div>
+    <div class="form-field">
+      <label for="brand">Brand</label>
+      <input type="text" placeholder="  Enter brand" name="brand" id="brand" required>
+    </div>
 
-        <div class="form-field">
-            <label for="category">category</label>
-            <input type="text" name="category" placeholder="  enter category" id="category" required>
-        </div>
+    <!-- 2️⃣ Category -->
+    <div class="form-field">
+      <label for="category">Category</label>
+      <input type="text" name="category" placeholder="  Enter category" id="category" required>
+    </div>
 
-        <div class="form-field">
-            <label for="image">Upload Image</label>
-            <input type="file" name="image" id="image" accept="image/*" required>
-        </div>
+    <div class="form-field">
+      <label for="subCategory">Sub Category</label>
+      <input type="text" name="subCategory" placeholder="  Enter sub category" id="subCategory">
+    </div>
 
-        <div class="form-field btn-field">
-            <button type="submit" class="btn">Add</button>
-        </div>
-        
-    </form>
+    <!-- 3️⃣ Pricing -->
+    <div class="form-field">
+      <label for="costPrice">Cost Price</label>
+      <input type="number" name="costPrice" placeholder="  Enter cost price" min="0" id="costPrice" required>
+    </div>
 
+    <div class="form-field">
+      <label for="sellingPrice">Selling Price</label>
+      <input type="number" name="sellingPrice" placeholder="  Enter selling price" min="0" id="sellingPrice" required>
+    </div>
+
+    <div class="form-field">
+      <label for="discount">Discount (%)</label>
+      <input type="number" name="discount" placeholder="  Enter discount" min="0" max="100" id="discount">
+    </div>
+
+    <!-- 4️⃣ Stock -->
+    <div class="form-field">
+      <label for="stock">Stock Quantity</label>
+      <input type="number" name="stock" placeholder="  Enter stock" min="0" id="stock" required>
+    </div>
+
+    <div class="form-field">
+      <label for="unit">Unit</label>
+      <input type="text" name="unit" placeholder="  e.g. pcs, kg, litre" id="unit">
+    </div>
+
+    <!-- 5️⃣ Image -->
+    <div class="form-field">
+      <label for="image">Upload Image</label>
+      <input type="file" name="image" id="image" accept="image/*" required>
+    </div>
+
+    <!-- 6️⃣ Description -->
+    <div class="form-field">
+      <label for="description">Description</label>
+      <textarea name="description" id="description" rows="3" placeholder="  Enter item description"></textarea>
+    </div>
+
+    <!-- 7️⃣ Submit -->
+    <div class="form-field btn-field">
+      <button type="submit" class="btn">Add</button>
+    </div>
+
+  </form>
 </div>

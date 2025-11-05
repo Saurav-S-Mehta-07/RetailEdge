@@ -3,48 +3,70 @@
 <div class="add-list-form">
   <h1 id="form-heading">Edit Item</h1>
   
-  <form action="/main/show/<%= details._id %>" class="form-list" method="post">
-    
+  <form action="/main/show/<%= details._id %>" class="form-list" method="post" enctype="multipart/form-data">
+
+    <!-- 1️⃣ Product Details -->
     <div class="form-field">
-      <label for="title">Item Name</label>
-      <input type="text" name="title" placeholder="Enter new title" value="<%= details.title %>" required>
+      <label for="name">Item Name</label>
+      <input type="text" name="name" placeholder="Enter new item name" value="<%= details.name %>" required>
     </div>
 
     <div class="form-field">
-      <label for="price">Price</label>
-      <input type="number" name="price" placeholder="Enter new price" min="0" value="<%= details.price %>" required>
+      <label for="brand">Brand</label>
+      <input type="text" name="brand" placeholder="Enter new brand" value="<%= details.brand %>">
     </div>
 
+    <!-- 2️⃣ Category -->
     <div class="form-field">
       <label for="category">Category</label>
       <input type="text" name="category" placeholder="Enter new category" value="<%= details.category %>" required>
     </div>
 
     <div class="form-field">
-      <label for="discount">Discount</label>
-      <input type="text" name="discount" placeholder="Enter new discount" value="<%= details.discount %>" required>
+      <label for="subCategory">Sub Category</label>
+      <input type="text" name="subCategory" placeholder="Enter new sub category" value="<%= details.subCategory %>">
     </div>
 
+    <!-- 3️⃣ Pricing -->
+    <div class="form-field">
+      <label for="costPrice">Cost Price</label>
+      <input type="number" name="costPrice" placeholder="Enter new cost price" min="0" value="<%= details.costPrice %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="sellingPrice">Selling Price</label>
+      <input type="number" name="sellingPrice" placeholder="Enter new selling price" min="0" value="<%= details.sellingPrice %>" required>
+    </div>
+
+    <div class="form-field">
+      <label for="discount">Discount (%)</label>
+      <input type="number" name="discount" placeholder="Enter new discount" min="0" max="100" value="<%= details.discount %>">
+    </div>
+
+    <!-- 4️⃣ Stock -->
     <div class="form-field">
       <label for="stock">Stock</label>
-      <input type="text" name="stock" placeholder="Enter new stock" value="<%= details.stock %>" required>
+      <input type="number" name="stock" placeholder="Enter new stock" min="0" value="<%= details.stock %>">
     </div>
 
     <div class="form-field">
-      <label for="quantity">Quantity</label>
-      <input type="text" name="quantity" placeholder="Enter new quantity" value="<%= details.quantity %>" required>
+      <label for="unit">Unit</label>
+      <input type="text" name="unit" placeholder="e.g. pcs, kg, litre" value="<%= details.unit %>">
     </div>
 
+    <!-- 5️⃣ Image -->
     <div class="form-field">
-      <label for="rating">Rating</label>
-      <input type="text" name="rating" placeholder="Enter new rating" value="<%= details.rating %>" required>
+      <label for="image">Image Link / Upload</label>
+      <input type="text" name="image" placeholder="Enter image URL" value="<%= details.image %>">
     </div>
 
+    <!-- 6️⃣ Description -->
     <div class="form-field">
-      <label for="image">Image link</label>
-      <input type="text" name="image" placeholder="Enter new image link" value="<%= details.image %>" required>
+      <label for="description">Description</label>
+      <textarea name="description" id="description" rows="3" maxlength="70"  placeholder="Enter item description"><%= details.description %></textarea>
     </div>
 
+    <!-- 7️⃣ Submit -->
     <div class="form-field btn-field">
       <button type="submit" class="btn">Update</button>
     </div>

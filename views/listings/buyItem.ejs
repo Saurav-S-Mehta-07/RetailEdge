@@ -1,0 +1,28 @@
+<% layout("layouts/boilerplateCode") %>
+
+<div class="container">
+  <%- include("../includes/leftNav.ejs") %> <!-- Left navigation -->
+
+    <div class="buyItem-containers">
+
+        <div class="buyItem-card">
+          <img class="item-img" src="/uploads/<%= orderedItem.image %>" alt="<%= orderedItem.name %>">
+          <h3 class="item-name"><%= orderedItem.name %></h3>
+          <p class="item-price">Price: <strong>₹<%= orderedItem.sellingPrice %></strong></p>
+        </div>
+
+        <div class="buyItem-form">
+          <h2>Order Now</h2>
+          <form action="/buyItem/<%= orderedItem._id %>" method="post" class="buyItem-form-element">
+            <div class="mb-3">
+              <label for="quantity" class="form-label">Quantity</label><br>
+              <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1" required>
+            </div>
+            <button type="submit" class="buyItem-btn">Buy Now</button>
+          </form>
+          <a href="/main/show/<%= orderedItem._id %>">Back to Item Details</a>
+        </div>
+
+    </div>
+  </div>
+</div>

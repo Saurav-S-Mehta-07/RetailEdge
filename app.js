@@ -130,36 +130,70 @@ app.delete("/main/order/:id", isLoggedIn, catchAsync(async (req, res) => {
 // Item Routes
 app.get("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
   const details = await Item.findById(req.params.id);
+  if (!details) {
+    req.flash("error", "Item not found");
+    return res.redirect("/main");
+  }
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
 
 app.post("/main/show/:id", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
-  const { title, price, category, discount, stock, rating, quantity } = req.body;
-  let details = await Item.findById(req.params.id);
-  if (!details) return res.status(404).send("Item not found");
+  const {
+    name,
+    brand,
+    category,
+    subCategory,
+    costPrice,
+    sellingPrice,
+    discount,
+    stock,
+    unit,
+    description
+  } = req.body;
 
-  details.title = title;
-  details.price = price;
-  details.category = category;
-  details.discount = discount;
-  details.stock = stock;
-  details.rating = rating;
-  details.quantity = quantity;
+  // Find item by ID
+  const details = await Item.findById(req.params.id);
+  if (!details) {
+    req.flash("error", "Item not found");
+    return res.redirect("/main");
+  }
 
-  // ✅ Only save image filename (no /uploads/)
-  if (req.file) details.image = req.file.filename;
+  // Update fields if provided
+  details.name = name || details.name;
+  details.brand = brand || details.brand;
+  details.category = category || details.category;
+  details.subCategory = subCategory || details.subCategory;
+  details.costPrice = costPrice || details.costPrice;
+  details.sellingPrice = sellingPrice || details.sellingPrice;
+  details.discount = discount || details.discount;
+  details.stock = stock || details.stock;
+  details.unit = unit || details.unit;
+  details.description = description || details.description;
+
+  // Update image if uploaded
+  if (req.file) {
+    details.image = req.file.filename;
+  }
 
   await details.save();
+
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+  req.flash("success", "Item updated successfully!");
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
+
 
 // Edit list
 app.get("/main/edit/:id", isLoggedIn, catchAsync(async (req, res) => {
   const details = await Item.findById(req.params.id);
+  if (!details) {
+    req.flash("error", "Item not found");
+    return res.redirect("/main");
+  }
   res.render("listings/editlist", { details });
 }));
+
 
 app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
@@ -168,10 +202,15 @@ app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
 
 // ✅ Save only image filename
 app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
-  const { title, price, category } = req.body;
+  const { name, costPrice, sellingPrice, category } = req.body; // must match schema
   const image = req.file ? req.file.filename : "";
 
-  const newItem = await Item.create({ title, price, category, image });
+  if (!name || !costPrice || !sellingPrice) {
+    req.flash("error", "Name, costPrice, and sellingPrice are required!");
+    return res.redirect("/addlist");
+  }
+
+  const newItem = await Item.create({ name, costPrice, sellingPrice, category, image });
   const shopkeeper = await Shopkeeper.findById(req.user._id);
   shopkeeper.items.push(newItem._id);
   await shopkeeper.save();
@@ -179,6 +218,7 @@ app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res
   req.flash("success", "Item added successfully!");
   res.redirect("/main");
 }));
+
 
 app.delete("/main/:id", isLoggedIn, catchAsync(async (req, res) => {
   await Item.findByIdAndDelete(req.params.id);
@@ -192,8 +232,22 @@ app.delete("/main/:id", isLoggedIn, catchAsync(async (req, res) => {
 // Buy Item
 app.get("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   const orderedItem = await Item.findById(req.params.id);
+  if (!orderedItem) {
+    req.flash("error", "Item not found");
+    return res.redirect("/main");
+  }
   res.render("listings/buyItem", { orderedItem });
 }));
+// GET route to render buyItem page
+app.get("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
+  const orderedItem = await Item.findById(req.params.id);
+  if (!orderedItem) {
+    req.flash("error", "Item not found");
+    return res.redirect("/main");
+  }
+  res.render("listings/buyItem", { orderedItem });
+}));
+
 
 app.post("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   const qty = parseInt(req.body.quantity);

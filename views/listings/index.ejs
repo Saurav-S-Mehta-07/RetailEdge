@@ -2,7 +2,16 @@
 <% layout("layouts/boilerplateCode")%>
     <div class="container">
 
+       <%- include("../includes/leftNav.ejs") %>
+
         <div class="main-page">
+
+            <div class="filter-content">
+                    <a href="/main/?q=all">all</a>
+                    <%for(let i of categories) { %>
+                        <a href="/main/?q=<%=i%>"><%=i%></a>
+                    <% }%>
+            </div>
 
             <div class="main-heading">
 
@@ -18,33 +27,7 @@
                 </div>
             </div>
 
-            <!-- <div class="cards-container">
-
-                <div class="cards listing-cards">
-
-                 <% for(let listing of items) { %>
-
-                   <a href="/main/show/<%=listing._id%>" class="listing-links">
-                    <div class="card listing-card">
-                        <form class="dlt-listing-form" action="/main/<%= listing._id %>?_method=delete" method="post">
-                             <button class="dlt-listing" type="submit">dlt</button>
-                        </form>
-                        <img class="cards-img" src="/assets/<%=listing.image%>" alt="">
-                    </div>
-                  </a>
-                <% } %>
-
-                </div>
-            </div> -->
-
             <div class="content">
-
-                 <div class="filter-content">
-                    <a href="/main/?q=all">all</a>
-                    <%for(let i of categories) { %>
-                        <a href="/main/?q=<%=i%>"><%=i%></a>
-                    <% }%>
-                 </div>
 
                  <div class="content-cards cards">
 

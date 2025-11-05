@@ -1,51 +1,65 @@
-<% layout("layouts/boilerplateCode")%>
-<div class="show-page">
-  <div class="show-containers">
-  
+<% layout("layouts/boilerplateCode") %>
+
+<div class="container">
+  <%- include("../includes/leftNav.ejs") %>
+
+  <div class="show-page">
+    <div class="show-containers">
+    
       <div class="clicked-show">
-              <div class="show-card" type="button">
-                   <form action="/main/edit/<%=details._id%>" method="get" class="edit">
-                       <button class="edit-btn">Edit</button>
-                   </form>
-                  <img class="show-card-img" src="/uploads/<%=details.image%>">
-                  <h4 class="item-title"><%=details.title%></details></h4>
-              </div>
-              <form action="/buyItem/<%=details._id%>" method="get" class="order-now">
-                  <button class="buy-btn">Order More</button>
-              </form>
+        <div class="show-card" type="button">
+          <form action="/main/edit/<%= details._id %>" method="get" class="edit">
+            <button class="edit-btn">Edit</button>
+          </form>
+          <img class="show-card-img" src="/uploads/<%= details.image %>" alt="<%= details.name %>">
+          <h4 class="item-title"><%= details.name %></h4>
+        </div>
+
+        <form action="/buyItem/<%= details._id %>" method="get" class="order-now">
+          <button class="buy-btn">Order More</button>
+        </form>
       </div>
       
       <div class="show-details">
-              <table border>
-                  <thead>Details of Product</thead>
-                  <tr>
-                    <th>Title</th><td><%=details.title%></td>
-                  </tr>
-                  <tr>
-                     <th>Price</th><td><%=details.price%></td>
-                  </tr>
-                   <tr>
-                     <th>Category</th><td><%=details.category%></td>
-                  </tr>
-                   <tr>
-                     <th>Discount</th><td><%=details.discount%></td>
-                  </tr>
-                   <tr>
-                     <th>Stock</th><td><%=details.stock%></td>
-                  </tr>
-                   <tr>
-                     <th>Quantity</th><td><%=details.quantity%></td>
-                  </tr>
-                   <tr>
-                     <th>Rating</th><td><%=details.rating%></td>
-                  </tr>
-              </table>
+        <table border>
+          <thead>Details of Product</thead>
+          <tr>
+            <th>Item Name</th><td><%= details.name %></td>
+          </tr>
+          <tr>
+            <th>Brand</th><td><%= details.brand || 'N/A' %></td>
+          </tr>
+          <tr>
+            <th>Category</th><td><%= details.category %></td>
+          </tr>
+          <tr>
+            <th>Sub Category</th><td><%= details.subCategory || 'N/A' %></td>
+          </tr>
+          <tr>
+            <th>Cost Price</th><td>₹<%= details.costPrice %></td>
+          </tr>
+          <tr>
+            <th>Selling Price</th><td>₹<%= details.sellingPrice %></td>
+          </tr>
+          <tr>
+            <th>Discount</th><td><%= details.discount %>%</td>
+          </tr>
+          <tr>
+            <th>Stock</th><td><%= details.stock %> <%= details.unit || 'pcs' %></td>
+          </tr>
+          <tr>
+            <th>Description</th><td><%= details.description || 'No description provided' %></td>
+          </tr>
+        </table>
       </div>
-  
-  </div> 
-  
-  <div class="show-list">
-      <%- include("../includes/items.ejs") %>
-  </div>
 
+    </div> 
+    
+    <div class="show-moreItems">
+      <div class="show-list">
+        <%- include("../includes/items.ejs") %>
+      </div>
+    </div>
+
+  </div>
 </div>
