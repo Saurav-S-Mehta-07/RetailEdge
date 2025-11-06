@@ -7,7 +7,7 @@ const LocalStrategy = require("passport-local");
 const session = require("express-session");
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
-const multer = require("multer"); // ✅ for image upload
+const multer = require("multer"); // for image upload
 require('dotenv').config();
 
 
@@ -17,7 +17,6 @@ const Shopkeeper = require("./models/Shopkeeper");
 const app = express();
 const PORT = 3000;
 
-// View engine & static
 app.engine("ejs", engine);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -26,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride("_method"));
 
-// ✅ Multer setup
+//Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, "public/uploads"));
@@ -200,7 +199,7 @@ app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/addlist", { items: shopkeeper.items });
 }));
 
-// ✅ Save only image filename
+// Save only image filename
 app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
   const { name, costPrice, sellingPrice, category } = req.body; // must match schema
   const image = req.file ? req.file.filename : "";
