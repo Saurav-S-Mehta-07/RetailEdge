@@ -55,25 +55,26 @@ const upload = multer({ storage });
 // MongoDB Atlas connection string
 const connectionString = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority&tls=true`;
 
+// Connect to MongoDB Atlas
 async function connectDB() {
   try {
     await mongoose.connect(connectionString, {
-      ssl: true,
-      tlsAllowInvalidCertificates: false,
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
     console.log("MongoDB Atlas Connected");
   } catch (err) {
     console.error("MongoDB Connection Error:", err);
-    setTimeout(connectDB, 5000); // Retry every 5 seconds
+    setTimeout(connectDB, 5000);
   }
 }
 connectDB();
 
-// Session store using MongoDB for production readiness
+// Session store with MongoDB
 const sessionStore = MongoStore.create({
   mongoUrl: connectionString,
   collectionName: "sessions",
-  ttl: 14 * 24 * 60 * 60, // 14 days
+  ttl: 14 * 24 * 60 * 60,
 });
 
 app.use(
@@ -97,12 +98,7 @@ app.use(flash());
 // Passport setup
 app.use(passport.initialize());
 app.use(passport.session());
-passport.use(
-  new LocalStrategy(
-    { usernameField: "email" },
-    Shopkeeper.authenticate()
-  )
-);
+passport.use(new LocalStrategy({ usernameField: "email" }, Shopkeeper.authenticate()));
 passport.serializeUser(Shopkeeper.serializeUser());
 passport.deserializeUser(Shopkeeper.deserializeUser());
 
@@ -122,11 +118,9 @@ const redirectIfLoggedIn = (req, res, next) =>
 const catchAsync = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// Routes for auth
+// Auth routes
 app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
-app.get("/signup", redirectIfLoggedIn, (req, res) =>
-  res.render("user/signup")
-);
+app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
 
 app.post(
   "/signup",
@@ -281,6 +275,188 @@ app.get(
       topSelling,
       monthsData,
     });
+  })
+);
+
+// Orders routes
+app.get(
+  "/main/order",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const shopkeeper = await Shopkeeper.findById(req.user._id).populate("myorder");
+    res.render("listings/myorder", { orders: shopkeeper.myorder });
+  })
+);
+
+app.delete(
+  "/main/order/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const shopkeeper = await Shopkeeper.findById(req.user._id);
+    shopkeeper.myorder = shopkeeper.myorder.filter(
+      (order) => order._id.toString() !== req.params.id
+    );
+    await shopkeeper.save();
+    req.flash("success", "Order deleted successfully!");
+    res.redirect("/main/order");
+  })
+);
+
+// Item details and update routes
+app.get(
+  "/main/show/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const details = await Item.findById(req.params.id);
+    if (!details) {
+      req.flash("error", "Item not found");
+      return res.redirect("/main");
+    }
+    const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+    res.render("listings/show", { details, items: shopkeeper.items });
+  })
+);
+
+app.post(
+  "/main/show/:id",
+  isLoggedIn,
+  upload.single("image"),
+  catchAsync(async (req, res) => {
+    const {
+      name,
+      brand,
+      category,
+      subCategory,
+      costPrice,
+      sellingPrice,
+      discount,
+      stock,
+      unit,
+      description,
+    } = req.body;
+
+    const details = await Item.findById(req.params.id);
+    if (!details) {
+      req.flash("error", "Item not found");
+      return res.redirect("/main");
+    }
+
+    details.name = name || details.name;
+    details.brand = brand || details.brand;
+    details.category = category || details.category;
+    details.subCategory = subCategory || details.subCategory;
+    details.costPrice = costPrice || details.costPrice;
+    details.sellingPrice = sellingPrice || details.sellingPrice;
+    details.discount = discount || details.discount;
+    details.stock = stock || details.stock;
+    details.unit = unit || details.unit;
+    details.description = description || details.description;
+
+    if (req.file) {
+      details.image = req.file.path;
+    }
+
+    await details.save();
+
+    const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+    req.flash("success", "Item updated successfully!");
+    res.render("listings/show", { details, items: shopkeeper.items });
+  })
+);
+
+// Edit item form route
+app.get(
+  "/main/edit/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const details = await Item.findById(req.params.id);
+    if (!details) {
+      req.flash("error", "Item not found");
+      return res.redirect("/main");
+    }
+    res.render("listings/editlist", { details });
+  })
+);
+
+// Add list form
+app.get(
+  "/addlist",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+    res.render("listings/addlist", { items: shopkeeper.items });
+  })
+);
+
+// Create new item route
+app.post(
+  "/main",
+  isLoggedIn,
+  upload.single("image"),
+  catchAsync(async (req, res) => {
+    const { name, costPrice, sellingPrice, category } = req.body;
+    const image = req.file ? req.file.path : "";
+
+    if (!name || !costPrice || !sellingPrice) {
+      req.flash("error", "Name, costPrice, and sellingPrice are required!");
+      return res.redirect("/addlist");
+    }
+
+    const newItem = await Item.create({ name, costPrice, sellingPrice, category, image });
+    const shopkeeper = await Shopkeeper.findById(req.user._id);
+    shopkeeper.items.push(newItem._id);
+    await shopkeeper.save();
+
+    req.flash("success", "Item added successfully!");
+    res.redirect("/main");
+  })
+);
+
+// Delete item route
+app.delete(
+  "/main/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    await Item.findByIdAndDelete(req.params.id);
+    const shopkeeper = await Shopkeeper.findById(req.user._id);
+    shopkeeper.items = shopkeeper.items.filter((id) => id.toString() !== req.params.id);
+    await shopkeeper.save();
+    req.flash("success", "Item deleted successfully!");
+    res.redirect("/main");
+  })
+);
+
+// Buy item routes
+app.get(
+  "/buyItem/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const orderedItem = await Item.findById(req.params.id);
+    if (!orderedItem) {
+      req.flash("error", "Item not found");
+      return res.redirect("/main");
+    }
+    res.render("listings/buyItem", { orderedItem });
+  })
+);
+
+app.post(
+  "/buyItem/:id",
+  isLoggedIn,
+  catchAsync(async (req, res) => {
+    const qty = parseInt(req.body.quantity);
+    const item = await Item.findById(req.params.id);
+    const shopkeeper = await Shopkeeper.findById(req.user._id);
+    shopkeeper.myorder.push({
+      item: req.params.id,
+      quantity: qty,
+      image: item.image,
+      title: item.title,
+      price: item.price,
+    });
+    await shopkeeper.save();
+    req.flash("success", "Item purchased successfully!");
+    res.redirect("/main/show/" + req.params.id);
   })
 );
 
