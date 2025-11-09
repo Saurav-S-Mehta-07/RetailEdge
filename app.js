@@ -52,29 +52,26 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-// MongoDB Atlas connection string
+// MongoDB Atlas connection string (with TLS)
 const connectionString = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority&tls=true`;
 
-// Connect to MongoDB Atlas
+// Connect to MongoDB Atlas (remove deprecated options)
 async function connectDB() {
   try {
-    await mongoose.connect(connectionString, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(connectionString);
     console.log("MongoDB Atlas Connected");
   } catch (err) {
     console.error("MongoDB Connection Error:", err);
-    setTimeout(connectDB, 5000);
+    setTimeout(connectDB, 5000); // Retry every 5 seconds if fails
   }
 }
 connectDB();
 
-// Session store with MongoDB
+// Session store using MongoDB
 const sessionStore = MongoStore.create({
   mongoUrl: connectionString,
   collectionName: "sessions",
-  ttl: 14 * 24 * 60 * 60,
+  ttl: 14 * 24 * 60 * 60, // 14 days
 });
 
 app.use(
@@ -84,7 +81,7 @@ app.use(
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      maxAge: 14 * 24 * 60 * 60 * 1000,
+      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -118,7 +115,9 @@ const redirectIfLoggedIn = (req, res, next) =>
 const catchAsync = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// Auth routes
+// Routes
+
+// Auth
 app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
 app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
 
@@ -127,13 +126,7 @@ app.post(
   catchAsync(async (req, res) => {
     const { email, password, name, shopname, location, city } = req.body;
     try {
-      const newShopkeeper = new Shopkeeper({
-        email,
-        name,
-        shopname,
-        location,
-        city,
-      });
+      const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
       await Shopkeeper.register(newShopkeeper, password);
       req.login(newShopkeeper, (err) => {
         if (err) throw err;
@@ -142,10 +135,7 @@ app.post(
       });
     } catch (err) {
       if (err.name === "UserExistsError") {
-        req.flash(
-          "error",
-          "An account with that email already exists. Please log in instead."
-        );
+        req.flash("error", "An account with that email already exists. Please log in instead.");
         return res.redirect("/");
       }
       req.flash("error", err.message);
@@ -174,7 +164,7 @@ app.get("/logout", (req, res, next) => {
   });
 });
 
-// Dashboard route
+// Main dashboard
 app.get(
   "/main",
   isLoggedIn,
@@ -186,7 +176,7 @@ app.get(
   })
 );
 
-// Categories route
+// Categories filtered listing
 app.get(
   "/main/categories",
   isLoggedIn,
@@ -197,12 +187,7 @@ app.get(
     if (req.query.q && req.query.q !== "all") {
       items = items.filter((i) => i.category === req.query.q);
     }
-    res.render("listings/category", {
-      shopkeeper,
-      items,
-      categories,
-      q: req.query.q || "all",
-    });
+    res.render("listings/category", { shopkeeper, items, categories, q: req.query.q || "all" });
   })
 );
 
@@ -213,23 +198,20 @@ app.delete(
   catchAsync(async (req, res) => {
     await Item.findByIdAndDelete(req.params.id);
     const shopkeeper = await Shopkeeper.findById(req.user._id);
-    shopkeeper.items = shopkeeper.items.filter(
-      (id) => id.toString() !== req.params.id
-    );
+    shopkeeper.items = shopkeeper.items.filter((id) => id.toString() !== req.params.id);
     await shopkeeper.save();
     req.flash("success", "Item deleted successfully!");
     res.redirect("/main/categories");
   })
 );
 
-// Dashboard analytics
+// Dashboard stats route
 app.get(
   "/main/dashboard",
   isLoggedIn,
   catchAsync(async (req, res) => {
     const stats = {
-      totalSalesAmount:
-        Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
+      totalSalesAmount: Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
       totalTransactions: Math.floor(Math.random() * 41) + 10,
       totalStock: Math.floor(Math.random() * (1000 - 500 + 1)) + 500,
       uniqueCustomers: Math.floor(Math.random() * 26) + 5,
@@ -269,12 +251,7 @@ app.get(
       });
     }
 
-    res.render("listings/dashboard", {
-      stats,
-      salesTrend,
-      topSelling,
-      monthsData,
-    });
+    res.render("listings/dashboard", { stats, salesTrend, topSelling, monthsData });
   })
 );
 
@@ -293,9 +270,7 @@ app.delete(
   isLoggedIn,
   catchAsync(async (req, res) => {
     const shopkeeper = await Shopkeeper.findById(req.user._id);
-    shopkeeper.myorder = shopkeeper.myorder.filter(
-      (order) => order._id.toString() !== req.params.id
-    );
+    shopkeeper.myorder = shopkeeper.myorder.filter((order) => order._id.toString() !== req.params.id);
     await shopkeeper.save();
     req.flash("success", "Order deleted successfully!");
     res.redirect("/main/order");
@@ -473,6 +448,6 @@ app.use((err, req, res, next) => {
   res.redirect("back");
 });
 
-app.listen(PORT, () =>
-  console.log(`Server running at http://localhost:${PORT}`)
-);
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
