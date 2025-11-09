@@ -77,23 +77,20 @@ const sessionStore = MongoStore.create({
   ttl: 14 * 24 * 60 * 60,
 });
 
-app.set("trust proxy", 1);
-
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecretkey",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+      maxAge: 14 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true on https production
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
     },
   })
 );
-
 
 // Flash messages
 app.use(flash());
