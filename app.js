@@ -186,7 +186,7 @@ app.get("/logout", (req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).render("404", { title: "Page Not Found" });
+  res.status(404).send("404", { title: "Page Not Found" });
 });
 
 // Global error handler
