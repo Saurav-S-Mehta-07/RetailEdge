@@ -77,6 +77,8 @@ const sessionStore = MongoStore.create({
   ttl: 14 * 24 * 60 * 60,
 });
 
+app.set("trust proxy", 1);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
