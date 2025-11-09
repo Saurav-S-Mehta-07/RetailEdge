@@ -5,13 +5,13 @@
 
   <div class="show-page">
     <div class="show-containers">
-    
+
       <div class="clicked-show">
         <div class="show-card" type="button">
           <form action="/main/edit/<%= details._id %>" method="get" class="edit">
             <button class="edit-btn">Edit</button>
           </form>
-          <img class="show-card-img" src="/uploads/<%= details.image %>" alt="<%= details.name %>">
+          <img class="show-card-img" src="<%= details.image %>" alt="<%= details.name %>">
           <h4 class="item-title"><%= details.name %></h4>
         </div>
 
@@ -60,6 +60,5 @@
         <%- include("../includes/items.ejs") %>
       </div>
     </div>
-
   </div>
 </div>

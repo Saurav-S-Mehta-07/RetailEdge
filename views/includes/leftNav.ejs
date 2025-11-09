@@ -2,7 +2,7 @@
   <div id="account" class="account-section">
     <div class="account-profile">
       <img 
-        src="<%= currentUser && currentUser.image ? '/uploads/' + currentUser.image : '/uploads/banner.jpeg' %>" 
+        src="<%= currentUser && currentUser.image ? currentUser.image : '/uploads/banner.jpeg' %>" 
         alt="Profile" 
         class="profile-pic" 
       />

@@ -7,42 +7,58 @@ const LocalStrategy = require("passport-local");
 const session = require("express-session");
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
-const multer = require("multer"); // for image upload
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 require('dotenv').config();
-
 
 const Item = require("./models/Item");
 const Shopkeeper = require("./models/Shopkeeper");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+// View engine setup
 app.engine("ejs", engine);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
+
+// Middleware for parsing body data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Method override to enable PUT/DELETE
 app.use(methodOverride("_method"));
 
-//Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "public/uploads"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+// Configure multer storage for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "shopkeeper-items",
+    allowed_formats: ["jpeg", "png", "jpg", "gif"],
   },
 });
 const upload = multer({ storage });
 
-// MongoDB
-mongoose.connect("mongodb://127.0.0.1:27017/b2b2c")
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error(err));
+// MongoDB Atlas connection
+const connectionString = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
 
-// Session
+mongoose.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("MongoDB Atlas Connected"))
+  .catch(err => console.error("MongoDB Connection Error:", err));
+
+// Session setup
 app.use(session({
   secret: "supersecretkey",
   resave: false,
@@ -50,16 +66,17 @@ app.use(session({
   cookie: { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true } // 1 month
 }));
 
+// Flash messages
 app.use(flash());
 
-// Passport
+// Passport setup
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy({ usernameField: "email" }, Shopkeeper.authenticate()));
 passport.serializeUser(Shopkeeper.serializeUser());
 passport.deserializeUser(Shopkeeper.deserializeUser());
 
-// Locals
+// Set locals for templates
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   res.locals.success = req.flash("success");
@@ -67,28 +84,25 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware
+// Middleware helpers
 const isLoggedIn = (req, res, next) => req.isAuthenticated() ? next() : res.redirect("/");
 const redirectIfLoggedIn = (req, res, next) => req.isAuthenticated() ? res.redirect("/main") : next();
 const catchAsync = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// Routes
+// Routes for auth
 app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
 app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
 
 app.post("/signup", catchAsync(async (req, res) => {
   const { email, password, name, shopname, location, city } = req.body;
-
   try {
     const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
     await Shopkeeper.register(newShopkeeper, password);
-
     req.login(newShopkeeper, err => {
       if (err) throw err;
       req.flash("success", `Welcome, ${req.user.name}!`);
       res.redirect("/main");
     });
-
   } catch (err) {
     if (err.name === "UserExistsError") {
       req.flash("error", "An account with that email already exists. Please log in instead.");
@@ -98,7 +112,6 @@ app.post("/signup", catchAsync(async (req, res) => {
     res.redirect("/signup");
   }
 }));
-
 
 app.post("/login", passport.authenticate("local", {
   failureRedirect: "/",
@@ -119,20 +132,23 @@ app.get("/logout", (req, res, next) => {
 // Dashboard
 app.get("/main", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
-  let items = shopkeeper.items;
+  let items = shopkeeper.items || [];
   const categories = [...new Set(items.map(i => i.category))];
-  // if (req.query.q && req.query.q !== "all") items = items.filter(i => i.category === req.query.q);
-  res.render("listings/index", { shopkeeper, items, categories}); //,q: req.query.q || "all" 
+  res.render("listings/index", { shopkeeper, items, categories });
 }));
 
+// Categories filtered listing
 app.get("/main/categories", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
-  let items = shopkeeper.items;
+  let items = shopkeeper.items || [];
   const categories = [...new Set(items.map(i => i.category))];
-  if (req.query.q && req.query.q !== "all") items = items.filter(i => i.category === req.query.q);
+  if (req.query.q && req.query.q !== "all") {
+    items = items.filter(i => i.category === req.query.q);
+  }
   res.render("listings/category", { shopkeeper, items, categories, q: req.query.q || "all" });
 }));
 
+// Delete category item
 app.delete("/main/categories:id", isLoggedIn, catchAsync(async (req, res) => {
   await Item.findByIdAndDelete(req.params.id);
   const shopkeeper = await Shopkeeper.findById(req.user._id);
@@ -141,18 +157,16 @@ app.delete("/main/categories:id", isLoggedIn, catchAsync(async (req, res) => {
   req.flash("success", "Item deleted successfully!");
   res.redirect("/main/categories");
 }));
-const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+// Dashboard stats
 app.get("/main/dashboard", isLoggedIn, catchAsync(async (req, res) => {
-  // Simulated stats data
   const stats = {
-    totalSalesAmount: getRandomInt(100000, 200000),
-    totalTransactions: getRandomInt(10, 50),
-    totalStock: getRandomInt(500, 1000),
-    uniqueCustomers: getRandomInt(5, 30)
+    totalSalesAmount: Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
+    totalTransactions: Math.floor(Math.random() * 41) + 10,
+    totalStock: Math.floor(Math.random() * (1000 - 500 + 1)) + 500,
+    uniqueCustomers: Math.floor(Math.random() * 26) + 5
   };
 
-  // Simulate sales trend for last 7 days
   const salesTrend = [];
   const today = new Date();
   for (let i = 6; i >= 0; i--) {
@@ -160,39 +174,34 @@ app.get("/main/dashboard", isLoggedIn, catchAsync(async (req, res) => {
     d.setDate(today.getDate() - i);
     salesTrend.push({
       date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      amount: getRandomInt(2000, 15000)
+      amount: Math.floor(Math.random() * (15000 - 2000 + 1)) + 2000
     });
   }
 
-  // Simulate top 5 selling items data
   const topSelling = [
-    { name: 'Demo Product 1', soldQty: getRandomInt(5, 20) },
-    { name: 'Demo Product 2', soldQty: getRandomInt(2, 15) },
-    { name: 'Demo Product 3', soldQty: getRandomInt(1, 10) },
-    { name: 'Demo Product 4', soldQty: getRandomInt(1, 8) },
-    { name: 'Demo Product 5', soldQty: getRandomInt(1, 5) }
+    { name: 'Demo Product 1', soldQty: Math.floor(Math.random() * 16) + 5 },
+    { name: 'Demo Product 2', soldQty: Math.floor(Math.random() * 14) + 2 },
+    { name: 'Demo Product 3', soldQty: Math.floor(Math.random() * 10) + 1 },
+    { name: 'Demo Product 4', soldQty: Math.floor(Math.random() * 8) + 1 },
+    { name: 'Demo Product 5', soldQty: Math.floor(Math.random() * 5) + 1 }
   ];
 
-  // Simulate month-wise performance data
   const monthsData = [];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   for (let m = 0; m < 12; m++) {
     monthsData.push({
       month: `${monthNames[m]} 2025`,
-      sales: getRandomInt(100000, 200000),
-      profit: getRandomInt(10000, 50000),
-      change: Math.floor(Math.random() * 15) - 7, // random between -7% to +7%
+      sales: Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
+      profit: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
+      change: Math.floor(Math.random() * 15) - 7,
       topProduct: `Product ${m + 1}`
     });
   }
 
-  res.render('listings/dashboard', { stats, salesTrend, topSelling, monthsData });
+  res.render("listings/dashboard", { stats, salesTrend, topSelling, monthsData });
 }));
 
-
-
-
-// Orders
+// Orders routes
 app.get("/main/order", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("myorder");
   res.render("listings/myorder", { orders: shopkeeper.myorder });
@@ -206,7 +215,7 @@ app.delete("/main/order/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.redirect("/main/order");
 }));
 
-// Item Routes
+// Item details and update routes
 app.get("/main/show/:id", isLoggedIn, catchAsync(async (req, res) => {
   const details = await Item.findById(req.params.id);
   if (!details) {
@@ -231,14 +240,12 @@ app.post("/main/show/:id", isLoggedIn, upload.single("image"), catchAsync(async 
     description
   } = req.body;
 
-  // Find item by ID
   const details = await Item.findById(req.params.id);
   if (!details) {
     req.flash("error", "Item not found");
     return res.redirect("/main");
   }
 
-  // Update fields if provided
   details.name = name || details.name;
   details.brand = brand || details.brand;
   details.category = category || details.category;
@@ -250,9 +257,8 @@ app.post("/main/show/:id", isLoggedIn, upload.single("image"), catchAsync(async 
   details.unit = unit || details.unit;
   details.description = description || details.description;
 
-  // Update image if uploaded
   if (req.file) {
-    details.image = req.file.filename;
+    details.image = req.file.path; // Cloudinary URL
   }
 
   await details.save();
@@ -262,8 +268,7 @@ app.post("/main/show/:id", isLoggedIn, upload.single("image"), catchAsync(async 
   res.render("listings/show", { details, items: shopkeeper.items });
 }));
 
-
-// Edit list
+// Edit item form route
 app.get("/main/edit/:id", isLoggedIn, catchAsync(async (req, res) => {
   const details = await Item.findById(req.params.id);
   if (!details) {
@@ -273,15 +278,16 @@ app.get("/main/edit/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/editlist", { details });
 }));
 
-
+// Add list form
 app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
   res.render("listings/addlist", { items: shopkeeper.items });
 }));
 
+// Create new item route
 app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
-  const { name, costPrice, sellingPrice, category } = req.body; // must match schema
-  const image = req.file ? req.file.filename : "";
+  const { name, costPrice, sellingPrice, category } = req.body;
+  const image = req.file ? req.file.path : "";
 
   if (!name || !costPrice || !sellingPrice) {
     req.flash("error", "Name, costPrice, and sellingPrice are required!");
@@ -297,7 +303,7 @@ app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res
   res.redirect("/main");
 }));
 
-
+// Delete item route
 app.delete("/main/:id", isLoggedIn, catchAsync(async (req, res) => {
   await Item.findByIdAndDelete(req.params.id);
   const shopkeeper = await Shopkeeper.findById(req.user._id);
@@ -307,7 +313,7 @@ app.delete("/main/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.redirect("/main");
 }));
 
-// Buy Item
+// Buy item routes
 app.get("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   const orderedItem = await Item.findById(req.params.id);
   if (!orderedItem) {
@@ -316,16 +322,6 @@ app.get("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   }
   res.render("listings/buyItem", { orderedItem });
 }));
-// GET route to render buyItem page
-app.get("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
-  const orderedItem = await Item.findById(req.params.id);
-  if (!orderedItem) {
-    req.flash("error", "Item not found");
-    return res.redirect("/main");
-  }
-  res.render("listings/buyItem", { orderedItem });
-}));
-
 
 app.post("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   const qty = parseInt(req.body.quantity);
@@ -337,16 +333,12 @@ app.post("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   res.redirect("/main/show/" + req.params.id);
 }));
 
-
+// 404 handler
 app.use((req, res) => {
-  res.status(404).render("404", { title: "Page Not Found" });
+  res.status(404).send("404", { title: "Page Not Found" });
 });
 
-
-
-
-
-// Global Error Handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err);
   req.flash("error", err.message || "Something went wrong!");
