@@ -10,6 +10,7 @@ const methodOverride = require("method-override");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("cloudinary").v2;
+const MongoStore = require("connect-mongo");
 require('dotenv').config();
 
 const Item = require("./models/Item");
@@ -51,19 +52,31 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-// MongoDB Atlas connection
+// MongoDB Atlas connection string
 const connectionString = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
 
-mongoose.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(connectionString, { /* no need for deprecated options */ })
   .then(() => console.log("MongoDB Atlas Connected"))
   .catch(err => console.error("MongoDB Connection Error:", err));
 
-// Session setup
+// Session store using MongoDB for production readiness
+const sessionStore = MongoStore.create({
+  mongoUrl: connectionString,
+  collectionName: "sessions",
+  ttl: 14 * 24 * 60 * 60 // 14 days
+});
+
 app.use(session({
-  secret: "supersecretkey",
+  secret: process.env.SESSION_SECRET || "supersecretkey",
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true } // 1 month
+  store: sessionStore,
+  cookie: {
+    maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // set secure cookie in production
+    sameSite: "lax"
+  }
 }));
 
 // Flash messages
@@ -76,7 +89,7 @@ passport.use(new LocalStrategy({ usernameField: "email" }, Shopkeeper.authentica
 passport.serializeUser(Shopkeeper.serializeUser());
 passport.deserializeUser(Shopkeeper.deserializeUser());
 
-// Set locals for templates
+// Set locals middleware
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   res.locals.success = req.flash("success");
@@ -88,6 +101,7 @@ app.use((req, res, next) => {
 const isLoggedIn = (req, res, next) => req.isAuthenticated() ? next() : res.redirect("/");
 const redirectIfLoggedIn = (req, res, next) => req.isAuthenticated() ? res.redirect("/main") : next();
 const catchAsync = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+atchAsync = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 // Routes for auth
 app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
@@ -345,4 +359,7 @@ app.use((err, req, res, next) => {
   res.redirect("back");
 });
 
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
