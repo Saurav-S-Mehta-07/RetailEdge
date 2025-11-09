@@ -159,7 +159,7 @@ app.post(
 app.post(
   "/login",
   passport.authenticate("local", {
-    failureRedirect: "/",
+    failureRedirect: "/main",
     failureFlash: true,
   }),
   (req, res) => {
