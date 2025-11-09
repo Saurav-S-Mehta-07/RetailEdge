@@ -108,9 +108,27 @@ app.get("/main", isLoggedIn, catchAsync(async (req, res) => {
   const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
   let items = shopkeeper.items;
   const categories = [...new Set(items.map(i => i.category))];
-  if (req.query.q && req.query.q !== "all") items = items.filter(i => i.category === req.query.q);
-  res.render("listings/index", { shopkeeper, items, categories, q: req.query.q || "all" });
+  // if (req.query.q && req.query.q !== "all") items = items.filter(i => i.category === req.query.q);
+  res.render("listings/index", { shopkeeper, items, categories}); //,q: req.query.q || "all" 
 }));
+
+app.get("/main/categories", isLoggedIn, catchAsync(async (req, res) => {
+  const shopkeeper = await Shopkeeper.findById(req.user._id).populate("items");
+  let items = shopkeeper.items;
+  const categories = [...new Set(items.map(i => i.category))];
+  if (req.query.q && req.query.q !== "all") items = items.filter(i => i.category === req.query.q);
+  res.render("listings/category", { shopkeeper, items, categories, q: req.query.q || "all" });
+}));
+
+app.delete("/main/categories:id", isLoggedIn, catchAsync(async (req, res) => {
+  await Item.findByIdAndDelete(req.params.id);
+  const shopkeeper = await Shopkeeper.findById(req.user._id);
+  shopkeeper.items = shopkeeper.items.filter(id => id.toString() !== req.params.id);
+  await shopkeeper.save();
+  req.flash("success", "Item deleted successfully!");
+  res.redirect("/main/categories");
+}));
+
 
 // Orders
 app.get("/main/order", isLoggedIn, catchAsync(async (req, res) => {
@@ -199,7 +217,6 @@ app.get("/addlist", isLoggedIn, catchAsync(async (req, res) => {
   res.render("listings/addlist", { items: shopkeeper.items });
 }));
 
-// Save only image filename
 app.post("/main", isLoggedIn, upload.single("image"), catchAsync(async (req, res) => {
   const { name, costPrice, sellingPrice, category } = req.body; // must match schema
   const image = req.file ? req.file.filename : "";
@@ -257,6 +274,9 @@ app.post("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   req.flash("success", "Item purchased successfully!");
   res.redirect("/main/show/" + req.params.id);
 }));
+
+
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {
