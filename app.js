@@ -19,19 +19,19 @@ const Shopkeeper = require("./models/Shopkeeper");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Set view engine and views directory
+// View engine setup
 app.engine("ejs", engine);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Serve static assets
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Middleware to parse JSON and urlencoded form data
+// Middleware for parsing body data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Enable HTTP verbs like PUT and DELETE with query param _method
+// Method override to enable PUT/DELETE
 app.use(methodOverride("_method"));
 
 // Configure Cloudinary
@@ -42,7 +42,7 @@ cloudinary.config({
   secure: true,
 });
 
-// Configure multer for image uploads to Cloudinary
+// Configure multer storage for Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -52,29 +52,31 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-// MongoDB Atlas connection string with TLS enabled
+// MongoDB Atlas connection string
 const connectionString = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_CLUSTER}/${process.env.MONGO_DB}?retryWrites=true&w=majority&tls=true`;
 
 // Connect to MongoDB Atlas
 async function connectDB() {
   try {
-    await mongoose.connect(connectionString);
+    await mongoose.connect(connectionString, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log("MongoDB Atlas Connected");
-  } catch (e) {
-    console.error("MongoDB Connection Error:", e);
+  } catch (err) {
+    console.error("MongoDB Connection Error:", err);
     setTimeout(connectDB, 5000);
   }
 }
 connectDB();
 
-// Configure session store backed by MongoDB for production-ready sessions
+// Session store with MongoDB
 const sessionStore = MongoStore.create({
   mongoUrl: connectionString,
   collectionName: "sessions",
-  ttl: 14 * 24 * 60 * 60, // 14 days
+  ttl: 14 * 24 * 60 * 60,
 });
 
-// Setup session middleware
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "supersecretkey",
@@ -82,7 +84,7 @@ app.use(
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+      maxAge: 14 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -90,28 +92,17 @@ app.use(
   })
 );
 
-// Initialize flash message middleware
+// Flash messages
 app.use(flash());
 
-// Initialize Passport and session middleware
+// Passport setup
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy({ usernameField: "email" }, Shopkeeper.authenticate()));
+passport.serializeUser(Shopkeeper.serializeUser());
+passport.deserializeUser(Shopkeeper.deserializeUser());
 
-// Passport user serialization
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await Shopkeeper.findById(id);
-    done(null, user);
-  } catch (e) {
-    done(e);
-  }
-});
-
-// Middleware to make variables accessible in all views
+// Set locals middleware
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   res.locals.success = req.flash("success");
@@ -119,7 +110,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Helper middlewares to check authentication status
+// Middleware helpers
 const isLoggedIn = (req, res, next) =>
   req.isAuthenticated() ? next() : res.redirect("/");
 const redirectIfLoggedIn = (req, res, next) =>
@@ -127,43 +118,34 @@ const redirectIfLoggedIn = (req, res, next) =>
 const catchAsync = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// Routes
-
 // Auth routes
-// Render login form if not logged in, else redirect to /main
-app.get("/", redirectIfLoggedIn, (req, res) => {
-  res.render("user/login");
-});
+app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
+app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
 
-// Render signup form if not logged in, else redirect to /main
-app.get("/signup", redirectIfLoggedIn, (req, res) => {
-  res.render("user/signup");
-});
-
-// Handle signup POST request
 app.post(
   "/signup",
-  catchAsync(async (req, res, next) => {
+  catchAsync(async (req, res) => {
     const { email, password, name, shopname, location, city } = req.body;
     try {
-      const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
-
+      const newShopkeeper = new Shopkeeper({
+        email,
+        name,
+        shopname,
+        location,
+        city,
+      });
       await Shopkeeper.register(newShopkeeper, password);
-
-      // Use req.login to log user in after signup
       req.login(newShopkeeper, (err) => {
-        if (err) {
-          console.error("Login after signup error:", err);
-          return next(err);
-        }
+        if (err) throw err;
         req.flash("success", `Welcome, ${req.user.name}!`);
-        req.session.save(() => {
-          res.redirect("/main");
-        });
+        res.redirect("/main");
       });
     } catch (err) {
       if (err.name === "UserExistsError") {
-        req.flash("error", "An account with that email already exists. Please log in instead.");
+        req.flash(
+          "error",
+          "An account with that email already exists. Please log in instead."
+        );
         return res.redirect("/");
       }
       req.flash("error", err.message);
@@ -172,7 +154,6 @@ app.post(
   })
 );
 
-// Handle login POST request with passport authentication middleware
 app.post(
   "/login",
   passport.authenticate("local", {
@@ -180,27 +161,20 @@ app.post(
     failureFlash: true,
   }),
   (req, res) => {
-    console.log("User logged in:", req.user);
     req.flash("success", `Welcome back, ${req.user.name}!`);
-    req.session.save(() => {
-      res.redirect("/main");
-    });
+    res.redirect("/main");
   }
 );
 
-// Logout route
 app.get("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.flash("success", "Logged out successfully!");
-    req.session.save(() => {
-      res.redirect("/");
-    });
+    res.redirect("/");
   });
 });
 
-
-// Main dashboard
+// Dashboard route
 app.get(
   "/main",
   isLoggedIn,
@@ -212,7 +186,7 @@ app.get(
   })
 );
 
-// Categories listing filtered by query
+// Categories route
 app.get(
   "/main/categories",
   isLoggedIn,
@@ -223,31 +197,39 @@ app.get(
     if (req.query.q && req.query.q !== "all") {
       items = items.filter((i) => i.category === req.query.q);
     }
-    res.render("listings/category", { shopkeeper, items, categories, q: req.query.q || "all" });
+    res.render("listings/category", {
+      shopkeeper,
+      items,
+      categories,
+      q: req.query.q || "all",
+    });
   })
 );
 
-// Delete item from category
+// Delete category item
 app.delete(
   "/main/categories/:id",
   isLoggedIn,
   catchAsync(async (req, res) => {
     await Item.findByIdAndDelete(req.params.id);
     const shopkeeper = await Shopkeeper.findById(req.user._id);
-    shopkeeper.items = shopkeeper.items.filter((id) => id.toString() !== req.params.id);
+    shopkeeper.items = shopkeeper.items.filter(
+      (id) => id.toString() !== req.params.id
+    );
     await shopkeeper.save();
     req.flash("success", "Item deleted successfully!");
     res.redirect("/main/categories");
   })
 );
 
-// Dashboard stats
+// Dashboard analytics
 app.get(
   "/main/dashboard",
   isLoggedIn,
   catchAsync(async (req, res) => {
     const stats = {
-      totalSalesAmount: Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
+      totalSalesAmount:
+        Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000,
       totalTransactions: Math.floor(Math.random() * 41) + 10,
       totalStock: Math.floor(Math.random() * (1000 - 500 + 1)) + 500,
       uniqueCustomers: Math.floor(Math.random() * 26) + 5,
@@ -287,7 +269,12 @@ app.get(
       });
     }
 
-    res.render("listings/dashboard", { stats, salesTrend, topSelling, monthsData });
+    res.render("listings/dashboard", {
+      stats,
+      salesTrend,
+      topSelling,
+      monthsData,
+    });
   })
 );
 
@@ -306,14 +293,16 @@ app.delete(
   isLoggedIn,
   catchAsync(async (req, res) => {
     const shopkeeper = await Shopkeeper.findById(req.user._id);
-    shopkeeper.myorder = shopkeeper.myorder.filter((order) => order._id.toString() !== req.params.id);
+    shopkeeper.myorder = shopkeeper.myorder.filter(
+      (order) => order._id.toString() !== req.params.id
+    );
     await shopkeeper.save();
     req.flash("success", "Order deleted successfully!");
     res.redirect("/main/order");
   })
 );
 
-// Item details & update
+// Item details and update routes
 app.get(
   "/main/show/:id",
   isLoggedIn,
@@ -375,7 +364,7 @@ app.post(
   })
 );
 
-// Edit item form
+// Edit item form route
 app.get(
   "/main/edit/:id",
   isLoggedIn,
@@ -389,7 +378,7 @@ app.get(
   })
 );
 
-// Add new list form
+// Add list form
 app.get(
   "/addlist",
   isLoggedIn,
@@ -399,7 +388,7 @@ app.get(
   })
 );
 
-// Create new item
+// Create new item route
 app.post(
   "/main",
   isLoggedIn,
@@ -412,6 +401,7 @@ app.post(
       req.flash("error", "Name, costPrice, and sellingPrice are required!");
       return res.redirect("/addlist");
     }
+
     const newItem = await Item.create({ name, costPrice, sellingPrice, category, image });
     const shopkeeper = await Shopkeeper.findById(req.user._id);
     shopkeeper.items.push(newItem._id);
@@ -422,7 +412,7 @@ app.post(
   })
 );
 
-// Delete item
+// Delete item route
 app.delete(
   "/main/:id",
   isLoggedIn,
@@ -483,7 +473,6 @@ app.use((err, req, res, next) => {
   res.redirect("back");
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+app.listen(PORT, () =>
+  console.log(`Server running at http://localhost:${PORT}`)
+);
