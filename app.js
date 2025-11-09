@@ -359,7 +359,4 @@ app.use((err, req, res, next) => {
   res.redirect("back");
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
