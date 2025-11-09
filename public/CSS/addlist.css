@@ -16,10 +16,13 @@
 
 
 #form-heading{
-    width: 15%;
+    width: 50%;
     text-align: center;
-    box-shadow: 2px 2px 20px #064232;
-    color:#064232 ;
+    box-shadow: 2px 2px 20px #FFF5F2;
+    color:#fff ;
+    font-size: xx-large;
+    background-color: #5A9690;
+    border-radius: 20px;
 }
 
 .form-list{

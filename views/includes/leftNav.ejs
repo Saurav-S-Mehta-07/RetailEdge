@@ -1,10 +1,26 @@
 <div class="left-navbar">
-      <div id="account">account</div>
-      <div id="navbar">
-            <a href="/main">Items</a>
-            <a href="/main/categories">Categories</a>
-            <a href="/main/dashboard">Dashboard</a>
-            <a href="/main/order">order</a>
-            <a href="/logout">logout</a>
-      </div>
+  <div id="account" class="account-section">
+    <div class="account-profile">
+      <img 
+        src="<%= currentUser && currentUser.image ? '/uploads/' + currentUser.image : '/uploads/banner.jpeg' %>" 
+        alt="Profile" 
+        class="profile-pic" 
+      />
+    </div>
+
+    <div class="account-details">
+      <h3 class="shop-name"><%= currentUser ? currentUser.shopname : '' %></h3>
+      <h3 class="owner-name"><%= currentUser ? currentUser.name : '' %></h3>
+      <p class="email"><%= currentUser ? currentUser.email : '' %></p>
+      <p class="location"><%= currentUser ? currentUser.location : '' %></p>
+    </div>
+  </div>
+
+  <div id="navbar">
+    <a href="/main">Items</a>
+    <a href="/main/categories">Categories</a>
+    <a href="/main/dashboard">Dashboard</a>
+    <a href="/main/order">Order</a>
+    <a href="/logout">Logout</a>
+  </div>
 </div>

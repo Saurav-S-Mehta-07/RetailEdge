@@ -78,14 +78,27 @@ app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
 
 app.post("/signup", catchAsync(async (req, res) => {
   const { email, password, name, shopname, location, city } = req.body;
-  const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
-  await Shopkeeper.register(newShopkeeper, password);
-  req.login(newShopkeeper, err => {
-    if (err) throw err;
-    req.flash("success", `Welcome, ${req.user.name}!`);
-    res.redirect("/main");
-  });
+
+  try {
+    const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
+    await Shopkeeper.register(newShopkeeper, password);
+
+    req.login(newShopkeeper, err => {
+      if (err) throw err;
+      req.flash("success", `Welcome, ${req.user.name}!`);
+      res.redirect("/main");
+    });
+
+  } catch (err) {
+    if (err.name === "UserExistsError") {
+      req.flash("error", "An account with that email already exists. Please log in instead.");
+      return res.redirect("/");
+    }
+    req.flash("error", err.message);
+    res.redirect("/signup");
+  }
 }));
+
 
 app.post("/login", passport.authenticate("local", {
   failureRedirect: "/",
@@ -323,6 +336,12 @@ app.post("/buyItem/:id", isLoggedIn, catchAsync(async (req, res) => {
   req.flash("success", "Item purchased successfully!");
   res.redirect("/main/show/" + req.params.id);
 }));
+
+
+app.use((req, res) => {
+  res.status(404).render("404", { title: "Page Not Found" });
+});
+
 
 
 

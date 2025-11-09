@@ -4,7 +4,6 @@
   <h1 id="form-heading">Add Item</h1>
   <form action="/main" class="form-list" method="post" enctype="multipart/form-data">
 
-    <!-- 1️⃣ Product Details -->
     <div class="form-field">
       <label for="name">Item Name</label>
       <input type="text" placeholder="  Enter item name" name="name" id="name" required>
@@ -15,7 +14,6 @@
       <input type="text" placeholder="  Enter brand" name="brand" id="brand" required>
     </div>
 
-    <!-- 2️⃣ Category -->
     <div class="form-field">
       <label for="category">Category</label>
       <input type="text" name="category" placeholder="  Enter category" id="category" required>
@@ -26,7 +24,6 @@
       <input type="text" name="subCategory" placeholder="  Enter sub category" id="subCategory">
     </div>
 
-    <!-- 3️⃣ Pricing -->
     <div class="form-field">
       <label for="costPrice">Cost Price</label>
       <input type="number" name="costPrice" placeholder="  Enter cost price" min="0" id="costPrice" required>
@@ -42,7 +39,6 @@
       <input type="number" name="discount" placeholder="  Enter discount" min="0" max="100" id="discount">
     </div>
 
-    <!-- 4️⃣ Stock -->
     <div class="form-field">
       <label for="stock">Stock Quantity</label>
       <input type="number" name="stock" placeholder="  Enter stock" min="0" id="stock" required>
@@ -53,19 +49,16 @@
       <input type="text" name="unit" placeholder="  e.g. pcs, kg, litre" id="unit">
     </div>
 
-    <!-- 5️⃣ Image -->
     <div class="form-field">
       <label for="image">Upload Image</label>
       <input type="file" name="image" id="image" accept="image/*" required>
     </div>
 
-    <!-- 6️⃣ Description -->
     <div class="form-field">
       <label for="description">Description</label>
       <textarea name="description" id="description" rows="3" placeholder="  Enter item description"></textarea>
     </div>
 
-    <!-- 7️⃣ Submit -->
     <div class="form-field btn-field">
       <button type="submit" class="btn">Add</button>
     </div>
