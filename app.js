@@ -104,8 +104,8 @@ const catchAsync = fn => (req, res, next) => Promise.resolve(fn(req, res, next))
 atchAsync = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 // Routes for auth
-app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
-app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
+app.get("/", redirectIfLoggedIn, (req, res) => res.render("/login"));
+app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("/signup"));
 
 app.post("/signup", catchAsync(async (req, res) => {
   const { email, password, name, shopname, location, city } = req.body;
