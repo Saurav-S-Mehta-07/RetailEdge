@@ -1,74 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mobile Shop Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <!-- Sidebar -->
-  <div class="left-navbar">
-    <h4 class="text-center mb-4">📱 Mobile Shop</h4>
-    <div id="navbar">
-      <a href="/main">Items</a>
-      <a href="/main/Categories">Categories</a>
-      <a href="/main/dashboard" class="active">Dashboard</a>
-      <a href="/main/order">Orders</a>
-      <a href="/logout">Logout</a>
-    </div>
-  </div>
+<% layout("layouts/boilerplateCode") %>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <h3>📊 Dashboard Overview</h3>
+<div class="dashboard-app-container">
+  <%- include("../includes/leftNav.ejs") %>
 
-    <div class="row mt-4">
-      <div class="col-md-3">
-        <div class="card p-3 text-center">
-          <h5>₹ 164,120.00</h5>
-          <small>Total Sales Amount</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card p-3 text-center">
-          <h5>4</h5>
-          <small>Total Sales Transactions</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card p-3 text-center">
-          <h5>690</h5>
-          <small>Total Items in Stock</small>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card p-3 text-center">
-          <h5>4</h5>
-          <small>Unique Customers</small>
-        </div>
-      </div>
-    </div>
+  <main class="dashboard-content" tabindex="0">
+    <header class="dashboard-header">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9h14v2H5zm0 4h14v2H5z"/></svg>
+      Dashboard Overview
+    </header>
 
-    <div class="row mt-5">
-      <div class="col-md-7">
-        <div class="chart-card">
-          <h5>Sales Trend (Last 7 Days)</h5>
-          <canvas id="salesTrendChart" width="400" height="250"></canvas>
-        </div>
-      </div>
-      <div class="col-md-5">
-        <div class="chart-card">
-          <h5>Top 5 Selling Items</h5>
-          <canvas id="topItemsChart" width="400" height="250"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
+    <section class="dashboard-stats-cards" aria-label="Summary statistics">
+      <article class="dashboard-card">
+        <span class="dashboard-icon" aria-hidden="true">₹</span>
+        <div>Total Sales Amount</div>
+        <div class="dashboard-number" aria-live="polite" aria-atomic="true"><%= stats.totalSalesAmount.toLocaleString() %></div>
+      </article>
+      <article class="dashboard-card">
+        <span class="dashboard-icon" aria-hidden="true">🛒</span>
+        <div>Total Sales Transactions</div>
+        <div class="dashboard-number"><%= stats.totalTransactions %></div>
+      </article>
+      <article class="dashboard-card">
+        <span class="dashboard-icon" aria-hidden="true">📦</span>
+        <div>Total Items in Stock</div>
+        <div class="dashboard-number"><%= stats.totalStock %></div>
+      </article>
+      <article class="dashboard-card">
+        <span class="dashboard-icon" aria-hidden="true">👥</span>
+        <div>Unique Customers</div>
+        <div class="dashboard-number"><%= stats.uniqueCustomers %></div>
+      </article>
+    </section>
 
-  <!-- Scripts at bottom -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
-</body>
-</html>
+    <section class="dashboard-charts" aria-label="Charts">
+      <article class="dashboard-chart" aria-label="Sales Trend last 7 days">
+        <h3>Sales Trend (Last 7 Days)</h3>
+        <canvas id="dashboard-salesTrend"></canvas>
+      </article>
+      <article class="dashboard-chart" aria-label="Top 5 Selling Items">
+        <h3>Top 5 Selling Items</h3>
+        <canvas id="dashboard-topSellingItems"></canvas>
+      </article>
+    </section>
+
+    <section class="dashboard-month-cards-container" aria-label="Monthly performance summary">
+      <h3>Month-wise Performance</h3>
+      <div class="dashboard-month-cards" id="dashboard-monthCards"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const stats = <%- JSON.stringify(stats) %>;
+    const salesTrend = <%- JSON.stringify(salesTrend) %>;
+    const topSelling = <%- JSON.stringify(topSelling) %>;
+    const monthsData = <%- JSON.stringify(monthsData) %>;
+  </script>
+
+</div>
+
