@@ -130,20 +130,36 @@ const catchAsync = (fn) => (req, res, next) =>
 // Routes
 
 // Auth routes
-app.get("/", redirectIfLoggedIn, (req, res) => res.render("user/login"));
-app.get("/signup", redirectIfLoggedIn, (req, res) => res.render("user/signup"));
+// Render login form if not logged in, else redirect to /main
+app.get("/", redirectIfLoggedIn, (req, res) => {
+  res.render("user/login");
+});
 
+// Render signup form if not logged in, else redirect to /main
+app.get("/signup", redirectIfLoggedIn, (req, res) => {
+  res.render("user/signup");
+});
+
+// Handle signup POST request
 app.post(
   "/signup",
-  catchAsync(async (req, res) => {
+  catchAsync(async (req, res, next) => {
     const { email, password, name, shopname, location, city } = req.body;
     try {
       const newShopkeeper = new Shopkeeper({ email, name, shopname, location, city });
+
       await Shopkeeper.register(newShopkeeper, password);
+
+      // Use req.login to log user in after signup
       req.login(newShopkeeper, (err) => {
-        if (err) throw err;
+        if (err) {
+          console.error("Login after signup error:", err);
+          return next(err);
+        }
         req.flash("success", `Welcome, ${req.user.name}!`);
-        res.redirect("/main");
+        req.session.save(() => {
+          res.redirect("/main");
+        });
       });
     } catch (err) {
       if (err.name === "UserExistsError") {
@@ -156,25 +172,33 @@ app.post(
   })
 );
 
+// Handle login POST request with passport authentication middleware
 app.post(
   "/login",
   passport.authenticate("local", {
-    failureRedirect: "/main",
+    failureRedirect: "/",
     failureFlash: true,
   }),
   (req, res) => {
+    console.log("User logged in:", req.user);
     req.flash("success", `Welcome back, ${req.user.name}!`);
-    res.redirect("/main");
+    req.session.save(() => {
+      res.redirect("/main");
+    });
   }
 );
 
+// Logout route
 app.get("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.flash("success", "Logged out successfully!");
-    res.redirect("/");
+    req.session.save(() => {
+      res.redirect("/");
+    });
   });
 });
+
 
 // Main dashboard
 app.get(
@@ -448,7 +472,7 @@ app.post(
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).render("404", { title: "Page Not Found" });
+  res.status(404).send("404", { title: "Page Not Found" });
 });
 
 // Global error handler
