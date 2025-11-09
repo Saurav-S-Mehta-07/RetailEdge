@@ -21,7 +21,7 @@
     "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.18.2",
     "method-override": "^3.0.0",
-    "mongodb": "^7.0.0",
+    "mongodb": "^6.20.0",
     "mongoose": "^8.18.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
