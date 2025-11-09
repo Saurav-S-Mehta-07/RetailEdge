@@ -128,6 +128,55 @@ app.delete("/main/categories:id", isLoggedIn, catchAsync(async (req, res) => {
   req.flash("success", "Item deleted successfully!");
   res.redirect("/main/categories");
 }));
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+app.get("/main/dashboard", isLoggedIn, catchAsync(async (req, res) => {
+  // Simulated stats data
+  const stats = {
+    totalSalesAmount: getRandomInt(100000, 200000),
+    totalTransactions: getRandomInt(10, 50),
+    totalStock: getRandomInt(500, 1000),
+    uniqueCustomers: getRandomInt(5, 30)
+  };
+
+  // Simulate sales trend for last 7 days
+  const salesTrend = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    salesTrend.push({
+      date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      amount: getRandomInt(2000, 15000)
+    });
+  }
+
+  // Simulate top 5 selling items data
+  const topSelling = [
+    { name: 'Demo Product 1', soldQty: getRandomInt(5, 20) },
+    { name: 'Demo Product 2', soldQty: getRandomInt(2, 15) },
+    { name: 'Demo Product 3', soldQty: getRandomInt(1, 10) },
+    { name: 'Demo Product 4', soldQty: getRandomInt(1, 8) },
+    { name: 'Demo Product 5', soldQty: getRandomInt(1, 5) }
+  ];
+
+  // Simulate month-wise performance data
+  const monthsData = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let m = 0; m < 12; m++) {
+    monthsData.push({
+      month: `${monthNames[m]} 2025`,
+      sales: getRandomInt(100000, 200000),
+      profit: getRandomInt(10000, 50000),
+      change: Math.floor(Math.random() * 15) - 7, // random between -7% to +7%
+      topProduct: `Product ${m + 1}`
+    });
+  }
+
+  res.render('listings/dashboard', { stats, salesTrend, topSelling, monthsData });
+}));
+
+
 
 
 // Orders
