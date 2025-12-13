@@ -71,7 +71,6 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("⚠️ Error:", err);
   res.status(500).render("error", {
     title: "Server Error",
     message: err.message || "Something went wrong!",

@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const itemSchema = new mongoose.Schema({
-  // 1️⃣ Product Details
   name: {
     type: String,
     required: true,
@@ -11,8 +10,6 @@ const itemSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-
-  // 2️⃣ Category & Type
   category: {
     type: String,
     required: true,
@@ -22,36 +19,32 @@ const itemSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-
-  // 3️⃣ Pricing
   costPrice: {
     type: Number,
-    required: true, // vendor’s purchase cost
+    required: true,
   },
   sellingPrice: {
     type: Number,
-    required: true, // price sold to customers
+    required: true,
   },
   discount: {
     type: Number,
-    default: 0, // percentage discount
+    default: 0,
   },
 
-  // 4️⃣ Stock & Inventory
   stock: {
     type: Number,
     default: 0,
   },
   minStockAlert: {
     type: Number,
-    default: 5, // low-stock alert
+    default: 5,
   },
   unit: {
     type: String,
-    default: "pcs", // e.g. pcs, kg, litre
+    default: "pcs",
   },
 
-  // 5️⃣ Image & Description
   image: {
     type: String,
     required: true,
