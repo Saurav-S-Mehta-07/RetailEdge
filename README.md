@@ -139,15 +139,18 @@ CLOUDINARY_API_SECRET=your_api_secret
 ## ▶️ Installation & Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/your-username/retailedge.git
+
+# Clone the repository
+git clone https://github.com/Saurav-S-Mehta-07/RetailEdge.git
+
+# Go to project directory
+cd RetailEdge
 
 # Install dependencies
 npm install
 
-# Run application
-npm start
-```
+# Start the application
+nodemon app.js
 
 ---
 
