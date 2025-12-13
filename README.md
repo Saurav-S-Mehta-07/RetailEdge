@@ -160,7 +160,7 @@ RetailEdge is designed **only for shopkeepers** to:
 
 * Manage shop inventory
 * Organize product categories
-* Place and track orders to **vendors/suppliers**
+* Place orders to 
 * Monitor shop operations from a single dashboard
 
 This system is **not intended for end users or customers**.
