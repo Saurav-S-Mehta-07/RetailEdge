@@ -14,6 +14,8 @@
             </div>
 
             <div class="content">
+                <p><%=success%></p>
+                <p><%=error%></p>
 
                  <div class="content-cards cards">
 
@@ -22,7 +24,7 @@
                     <a href="/main/show/<%=item._id%>" class="item-links">
 
                      <div class="content-card card" type="button">
-                        <form class="dlt-btn-form" action="/main/categories<%= item._id %>?_method=delete" method="post">
+                        <form class="dlt-btn-form" action="/main/categories/<%= item._id %>?_method=delete" method="post">
                           <button type="submit" class="dlt-btn">dlt</button>
                         </form>
                         <img class="content-card-img  cards-img" src="<%=item.image%>" alt="">

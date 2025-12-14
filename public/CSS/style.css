@@ -413,4 +413,12 @@ body{
 }
 
 
-
+/* flash div */
+.flash-div{
+   margin-top: 10px;
+   width: 100%;
+   text-align: center;
+}
+.flash-div p{
+    color: #568F87;
+}

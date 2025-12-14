@@ -5,12 +5,13 @@
 
   <div class="show-page">
     <div class="show-containers">
-
+      
       <div class="clicked-show">
         <div class="show-card" type="button">
           <form action="/main/edit/<%= details._id %>" method="get" class="edit">
             <button class="edit-btn">Edit</button>
           </form>
+           <p><%=success%></p>
           <img class="show-card-img" src="<%= details.image %>" alt="<%= details.name %>">
           <h4 class="item-title"><%= details.name %></h4>
         </div>
