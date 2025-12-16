@@ -154,6 +154,7 @@ nodemon app.js
 
 ---
 
+
 ## 📌 Use Case
 
 RetailEdge is designed **only for shopkeepers** to:
